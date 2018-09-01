@@ -25,13 +25,16 @@ import com.shatteredpixel.shatteredpixeldungeon.Chrome;
 import com.shatteredpixel.shatteredpixeldungeon.effects.ShadowBox;
 import com.shatteredpixel.shatteredpixeldungeon.input.GameAction;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.PixelScene;
+import com.shatteredpixel.shatteredpixeldungeon.sprites.BeeSprite;
 import com.watabou.input.NoosaInputProcessor;
-import com.watabou.noosa.Camera;
-import com.watabou.noosa.Game;
-import com.watabou.noosa.Group;
-import com.watabou.noosa.NinePatch;
-import com.watabou.noosa.TouchArea;
+import com.watabou.input.NoosaInputProcessor.Touch;
+import com.watabou.noosa.*;
+import com.watabou.noosa.ui.Button;
+import com.watabou.noosa.ui.ButtonControl;
+import com.watabou.utils.PointF;
 import com.watabou.utils.Signal;
+
+import java.util.ArrayList;
 
 public class Window extends Group implements Signal.Listener<NoosaInputProcessor.Key<GameAction>> {
 
@@ -66,7 +69,7 @@ public class Window extends Group implements Signal.Listener<NoosaInputProcessor
 		
 		blocker = new TouchArea( 0, 0, PixelScene.uiCamera.width, PixelScene.uiCamera.height ) {
 			@Override
-			protected void onClick( NoosaInputProcessor.Touch touch ) {
+			protected void onClick( Touch touch ) {
 				if (Window.this.parent != null && !Window.this.chrome.overlapsScreenPoint(
 					(int)touch.current.x,
 					(int)touch.current.y )) {
@@ -179,12 +182,106 @@ public class Window extends Group implements Signal.Listener<NoosaInputProcessor
 	}
 
 	protected void onKeyUp( NoosaInputProcessor.Key<GameAction> key ) {
+        handleKeyNavigation(key);
 	}
 
 	public void onBackPressed() {
 		hide();
 	}
-	
+
 	public void onMenuPressed() {
 	}
+
+	private int focusIndex = -1;
+    private ArrayList<Button> buttons;
+    Image focusSprite;
+
+
+    @Override
+    public synchronized void update() {
+        if(focusIndex == -1) {
+            initKeyNavigation();
+        }
+        super.update();
+    }
+
+    public void initKeyNavigation() {
+		buttons = new ArrayList<Button>();
+		for (Gizmo member : this.members) {
+			if(member instanceof Button) {
+				buttons.add((Button) member);
+			}
+		}
+
+		if(buttons.isEmpty()) {
+		    return;
+        }
+		focusIndex = 0;
+        focusSprite = new BeeSprite();
+		this.add(focusSprite);
+		updateFocusSprite();
+	}
+
+	protected void handleKeyNavigation(NoosaInputProcessor.Key<GameAction> key) {
+		if(focusIndex == -1) {
+			initKeyNavigation();
+			System.out.println("initialized buttons: " + buttons);
+		}
+		System.out.println(key.code + " " + key.action + " " + key.pressed);
+
+		if(buttons.isEmpty()) {
+			System.out.println("no buttons");
+			return;
+		}
+
+		Button button = this.buttons.get(focusIndex);
+		System.out.println(button);
+
+		switch(key.action) {
+			case MOVE_LEFT:
+			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, -1, 0));
+				break;
+			case MOVE_RIGHT:
+			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, 1, 0));
+				break;
+			case MOVE_UP:
+			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, 0, -1));
+				break;
+			case MOVE_DOWN:
+			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, 0, 1));
+				break;
+			case OPERATE:
+				ButtonControl.triggerClick(button);
+				break;
+		}
+        updateFocusSprite();
+	}
+
+	private Button findClosestButtonInDir(Button origin, float dirX, float dirY) {
+        float orgX = origin.centerX();
+        float orgY = origin.centerY();
+        float closestDist = 100000000.0f;
+        Button closestButton = origin;
+        for (Button button : buttons) {
+            if(button == origin) continue;
+            float distX = button.centerX() - orgX;
+            float distY = button.centerY() - orgY;
+            distX *= (1 - Math.abs(dirX)) * 5 + 1;
+            distY *= (1 - Math.abs(dirY)) * 5 + 1;
+            float dist = (float) Math.sqrt(distX * distX + distY * distY);
+            float scalarProd = distX * dirX + distY * dirY;
+            if(scalarProd > 0 && dist < closestDist) {
+                closestDist = dist;
+                closestButton = button;
+            }
+        }
+        return closestButton;
+    }
+
+    private void updateFocusSprite() {
+        Button button = buttons.get(focusIndex);
+        focusSprite.center(new PointF(button.left() + 5,button.top() + 5));
+        focusSprite.update();
+    }
+
 }

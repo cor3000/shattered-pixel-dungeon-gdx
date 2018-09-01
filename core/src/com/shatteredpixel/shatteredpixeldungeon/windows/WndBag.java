@@ -20,6 +20,7 @@
  */
 package com.shatteredpixel.shatteredpixeldungeon.windows;
 
+import com.badlogic.gdx.Input;
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
@@ -61,6 +62,7 @@ import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.Image;
 import com.watabou.noosa.RenderedText;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.noosa.ui.ButtonControl;
 import com.watabou.utils.RectF;
 
 public class WndBag extends WndTabbed {
@@ -155,6 +157,17 @@ public class WndBag extends WndTabbed {
 	protected void onKeyUp( NoosaInputProcessor.Key<GameAction> key ) {
 		if (key.action == GameAction.BACKPACK) {
 			hide();
+		} else if(key.code == Input.Keys.PAGE_UP || key.code == Input.Keys.PAGE_DOWN) {
+			int tabDir = key.code == Input.Keys.PAGE_DOWN ? 1 : -1;
+			for (Tab tab : tabs) {
+				if(tab.selected) {
+					int selectedIndex = tabs.indexOf(tab);
+					int newTabIndex = (selectedIndex + 1 + tabs.size()) % tabs.size();
+					Tab newTab = tabs.get(newTabIndex);
+					ButtonControl.triggerClick(newTab);
+					break;
+				}
+			}
 		} else {
 			super.onKeyUp( key );
 		}
