@@ -26,11 +26,13 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.ShadowBox;
 import com.shatteredpixel.shatteredpixeldungeon.input.GameAction;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.PixelScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.BeeSprite;
+import com.sun.javafx.geom.Vec2f;
 import com.watabou.input.NoosaInputProcessor;
 import com.watabou.input.NoosaInputProcessor.Touch;
 import com.watabou.noosa.*;
 import com.watabou.noosa.ui.Button;
 import com.watabou.noosa.ui.ButtonControl;
+import com.watabou.utils.Point;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Signal;
 
@@ -238,17 +240,29 @@ public class Window extends Group implements Signal.Listener<NoosaInputProcessor
 		System.out.println(button);
 
 		switch(key.action) {
-			case MOVE_LEFT:
-			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, -1, 0));
-				break;
 			case MOVE_RIGHT:
 			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, 1, 0));
+				break;
+			case MOVE_TOP_RIGHT:
+			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, 1, -1));
 				break;
 			case MOVE_UP:
 			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, 0, -1));
 				break;
+			case MOVE_TOP_LEFT:
+			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, -1, -1));
+				break;
+			case MOVE_LEFT:
+			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, -1, 0));
+				break;
+			case MOVE_BOTTOM_LEFT:
+			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, -1, 1));
+				break;
 			case MOVE_DOWN:
 			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, 0, 1));
+				break;
+			case MOVE_BOTTOM_RIGHT:
+			    focusIndex = buttons.indexOf(findClosestButtonInDir(button, 1, 1));
 				break;
 			case OPERATE:
 				ButtonControl.triggerClick(button);
@@ -257,20 +271,27 @@ public class Window extends Group implements Signal.Listener<NoosaInputProcessor
         updateFocusSprite();
 	}
 
-	private Button findClosestButtonInDir(Button origin, float dirX, float dirY) {
-        float orgX = origin.centerX();
-        float orgY = origin.centerY();
+	private Button findClosestButtonInDir(Button originButton, float dirX, float dirY) {
+    	PointF dir = new PointF(dirX, dirY);
+    	dir.normalize();
+    	PointF originPos = new PointF(originButton.centerX(), originButton.centerY());
+
         float closestDist = 100000000.0f;
-        Button closestButton = origin;
+        Button closestButton = originButton;
         for (Button button : buttons) {
-            if(button == origin) continue;
-            float distX = button.centerX() - orgX;
-            float distY = button.centerY() - orgY;
-            distX *= (1 - Math.abs(dirX)) * 5 + 1;
-            distY *= (1 - Math.abs(dirY)) * 5 + 1;
-            float dist = (float) Math.sqrt(distX * distX + distY * distY);
-            float scalarProd = distX * dirX + distY * dirY;
-            if(scalarProd > 0 && dist < closestDist) {
+            if(button == originButton) continue;
+
+			PointF targetPos = new PointF(button.centerX(), button.centerY());
+			PointF targetDir = PointF.diff(targetPos, originPos);
+
+            float dist = targetDir.length();
+
+			targetDir.normalize();
+			float scalarProd = targetDir.x * dir.x + targetDir.y * dir.y;
+
+			float angle = (float) Math.acos(scalarProd) / PointF.G2R;
+
+            if(scalarProd > 0 && angle < 22.5 && dist < closestDist) {
                 closestDist = dist;
                 closestButton = button;
             }

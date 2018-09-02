@@ -162,7 +162,7 @@ public class WndBag extends WndTabbed {
 			for (Tab tab : tabs) {
 				if(tab.selected) {
 					int selectedIndex = tabs.indexOf(tab);
-					int newTabIndex = (selectedIndex + 1 + tabs.size()) % tabs.size();
+					int newTabIndex = (selectedIndex + tabDir + tabs.size()) % tabs.size();
 					Tab newTab = tabs.get(newTabIndex);
 					ButtonControl.triggerClick(newTab);
 					break;
